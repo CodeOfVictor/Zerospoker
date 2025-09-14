@@ -1,4 +1,3 @@
-import React from "react";
 import { WorldMap } from "./components/WorldMap";
 
 function App() {
