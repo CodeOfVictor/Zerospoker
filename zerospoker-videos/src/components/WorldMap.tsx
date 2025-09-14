@@ -10,10 +10,13 @@ import Link from "@mui/material/Link";
 import { feature } from "topojson-client";
 import countries from "i18n-iso-countries";
 import es from "i18n-iso-countries/langs/es.json";
-import AddIcon from "@mui/icons-material/Add"; // Zoom in
-import RemoveIcon from "@mui/icons-material/Remove"; // Zoom out
-import MapIcon from "@mui/icons-material/Map"; // Reset
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import MapIcon from "@mui/icons-material/Map";
+import InfoIcon from "@mui/icons-material/Info";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import Divider from "@mui/material/Divider";
 
 import worldTopo from "../json/countries-50m.json";
 import youtubeVideos from "../json/youtube_all_videos_tagged.json";
@@ -25,10 +28,9 @@ countries.registerLocale(es);
 const normalizeCountryName = (country: string): string => {
   switch (country) {
     case "Corea del Sur":
-      return "República de Corea"; // Official Spanish name for South Korea
+      return "República de Corea";
     case "Corea del Norte":
-      return "República Popular Democrática de Corea"; // North Korea
-    // Add more normalizations as needed for other mismatches
+      return "República Popular Democrática de Corea";
     default:
       return country;
   }
@@ -45,11 +47,11 @@ export const WorldMap: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [geoData, setGeoData] = useState<any>(null);
   const [videoCountries, setVideoCountries] = useState<Set<string>>(new Set());
-  const [zoom, setZoom] = useState(1); // Initial zoom level
-  const [center, setCenter] = useState([0, 0]); // Initial center coordinates
+  const [zoom, setZoom] = useState(1);
+  const [center, setCenter] = useState([0, 0]);
+  const [infoOpen, setInfoOpen] = useState(false); // Panel de información
 
   useEffect(() => {
-    // Process TopoJSON for map
     try {
       const geo = feature(worldTopo, worldTopo.objects.countries);
       setGeoData(geo);
@@ -57,7 +59,6 @@ export const WorldMap: React.FC = () => {
       // Handle error silently
     }
 
-    // Extract Spanish country names with videos
     const countrySet = new Set<string>();
     youtubeVideos.forEach((video: any) => {
       video.countries.forEach((country: string) => {
@@ -79,7 +80,6 @@ export const WorldMap: React.FC = () => {
     setSelectedCountry(null);
   };
 
-  // Filter videos for the selected country with normalization
   const getCountryVideos = () => {
     if (!selectedCountry) return [];
     return youtubeVideos.filter((video: any) =>
@@ -87,18 +87,17 @@ export const WorldMap: React.FC = () => {
     );
   };
 
-  // Zoom functions
   const handleZoomIn = () => {
-    setZoom((prevZoom) => Math.min(prevZoom + 1, 20)); // Max zoom from ZoomableGroup
+    setZoom((prevZoom) => Math.min(prevZoom + 1, 20));
   };
 
   const handleZoomOut = () => {
-    setZoom((prevZoom) => Math.max(prevZoom - 1, 1)); // Min zoom from ZoomableGroup
+    setZoom((prevZoom) => Math.max(prevZoom - 1, 1));
   };
 
   const handleReset = () => {
-    setZoom(1); // Reset to initial zoom
-    setCenter([0, 0]); // Reset to initial center
+    setZoom(1);
+    setCenter([0, 0]);
   };
 
   if (!geoData) return <div>Loading map...</div>;
@@ -113,6 +112,22 @@ export const WorldMap: React.FC = () => {
         position: "relative",
       }}
     >
+      {/* Info Icon - Top Left */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 10,
+          left: 10,
+          zIndex: 10,
+        }}
+      >
+        <Tooltip title="Información">
+          <IconButton onClick={() => setInfoOpen(true)} color="primary" aria-label="Información">
+            <InfoIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
       {/* Zoom Controls */}
       <Box
         sx={{
@@ -170,7 +185,7 @@ export const WorldMap: React.FC = () => {
                           fill: isSelected
                             ? "#E42"
                             : hasVideos
-                            ? "#1976D2" // Light blue for countries with videos
+                            ? "#1976D2"
                             : "#D6D6DA",
                           outline: "none",
                           cursor: "pointer",
@@ -179,7 +194,7 @@ export const WorldMap: React.FC = () => {
                           fill: isSelected
                             ? "#E42"
                             : hasVideos
-                            ? "#87CEEB" // Slightly darker blue on hover
+                            ? "#87CEEB"
                             : "#F53",
                           outline: "none",
                           cursor: "pointer",
@@ -199,7 +214,7 @@ export const WorldMap: React.FC = () => {
         </ComposableMap>
       </div>
 
-      {/* Drawer responsive */}
+      {/* Drawer de País */}
       <Drawer
         anchor="right"
         open={drawerOpen}
@@ -209,8 +224,8 @@ export const WorldMap: React.FC = () => {
             width: { xs: "80vw", sm: "450px" },
             maxWidth: "100%",
             boxSizing: "border-box",
-            backgroundColor: "#f0f7fa", // Soft blue background
-            color: "#333", // Dark text for contrast
+            backgroundColor: "#f0f7fa",
+            color: "#333",
           },
         }}
       >
@@ -219,7 +234,7 @@ export const WorldMap: React.FC = () => {
             variant="h6"
             sx={{
               fontWeight: 600,
-              color: "#5ac3dd", // Accent color for header
+              color: "#5ac3dd",
               borderBottom: "2px solid #5ac3dd",
               paddingBottom: 1,
               marginBottom: 2,
@@ -330,6 +345,45 @@ export const WorldMap: React.FC = () => {
               </List>
             </>
           )}
+        </Box>
+      </Drawer>
+
+      {/* Drawer de Información */}
+      <Drawer
+        anchor="left"
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        sx={{
+          "& .MuiDrawer-paper": {
+            width: { xs: "80vw", sm: "400px" },
+            maxWidth: "100%",
+            boxSizing: "border-box",
+            backgroundColor: "#fffbea",
+            color: "#333",
+            padding: 2,
+          },
+        }}
+      >
+        <Box>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              color: "#f57c00",
+              marginBottom: 1,
+            }}
+          >
+            Aviso Importante
+          </Typography>
+          <Divider sx={{ marginBottom: 2 }} />
+          <Typography variant="body1" sx={{ marginBottom: 2 }}>
+            Esta página <strong>no es oficial</strong> ni está relacionada con{" "}
+            <strong>Zerospoker</strong>.
+          </Typography>
+          <Typography variant="body2">
+            Ha sido creada únicamente por un <strong>programador aficionado</strong> a su contenido,
+            con fines no comerciales.
+          </Typography>
         </Box>
       </Drawer>
     </div>
